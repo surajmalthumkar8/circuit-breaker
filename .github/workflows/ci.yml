@@ -1,0 +1,41 @@
+# Continuous integration.
+#
+# Runs on every push to the single branch this project uses. Deliberately requires NO
+# secrets: the deterministic fallback means the whole suite passes with no API keys, so
+# a fresh clone of this repository is verifiable by anyone.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Typecheck, lint, test, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # Runs last because it is the slowest, and because a type or lint failure
+      # explains a build failure better than the build output does.
+      - name: Build
+        run: npm run build

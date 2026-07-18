@@ -1,0 +1,178 @@
+@import "tailwindcss";
+
+/*
+ * Circuit Breaker design tokens.
+ *
+ * The palette is deliberately calm and low-arousal: this app is used at the exact moment
+ * someone is agitated, and a high-contrast, saturated interface would work against the
+ * intervention. Colours shift with the user's inferred risk state — see [data-risk].
+ */
+
+@theme {
+  --color-ink-50: #f6f7f9;
+  --color-ink-100: #eceef2;
+  --color-ink-200: #d5d9e2;
+  --color-ink-300: #b0b7c6;
+  --color-ink-400: #848fa4;
+  --color-ink-500: #647089;
+  --color-ink-600: #4e5970;
+  --color-ink-700: #40495c;
+  --color-ink-800: #373e4e;
+  --color-ink-900: #313644;
+  --color-ink-950: #1d212c;
+
+  --color-calm-400: #5eb0a4;
+  --color-calm-500: #3f9488;
+  --color-calm-600: #2f766d;
+  --color-calm-700: #285f59;
+
+  --color-alert-400: #e2a05a;
+  --color-alert-500: #d1843a;
+  --color-alert-600: #b0662a;
+
+  --color-urgent-400: #d97b72;
+  --color-urgent-500: #c25c53;
+  --color-urgent-600: #a3453f;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+  --surface: #f8f9fb;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eef0f5;
+  --border: #dfe3ea;
+  --text: #1d212c;
+  --text-muted: #647089;
+  --accent: #2f766d;
+  --accent-contrast: #ffffff;
+  --ring: #3f9488;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #14171f;
+    --surface-raised: #1d212c;
+    --surface-sunken: #10131a;
+    --border: #2c3242;
+    --text: #eceef2;
+    --text-muted: #969fb3;
+    --accent: #5eb0a4;
+    --accent-contrast: #10131a;
+    --ring: #5eb0a4;
+  }
+}
+
+/* Explicit theme override wins over the media query in both directions. */
+:root[data-theme="light"] {
+  --surface: #f8f9fb;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eef0f5;
+  --border: #dfe3ea;
+  --text: #1d212c;
+  --text-muted: #647089;
+  --accent: #2f766d;
+  --accent-contrast: #ffffff;
+  --ring: #3f9488;
+}
+
+:root[data-theme="dark"] {
+  --surface: #14171f;
+  --surface-raised: #1d212c;
+  --surface-sunken: #10131a;
+  --border: #2c3242;
+  --text: #eceef2;
+  --text-muted: #969fb3;
+  --accent: #5eb0a4;
+  --accent-contrast: #10131a;
+  --ring: #5eb0a4;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Adaptive interface.
+ *
+ * The container carries the inferred risk state and the interface responds to it: at
+ * high risk the palette cools, motion is reduced, and non-essential surfaces recede, so
+ * the screen itself carries less stimulation at the moment stimulation is the problem.
+ */
+[data-risk="tempted"] {
+  --accent: var(--color-alert-500);
+  --ring: var(--color-alert-400);
+}
+
+[data-risk="high_risk"] {
+  --accent: var(--color-urgent-500);
+  --ring: var(--color-urgent-400);
+}
+
+[data-risk="high_risk"] .deprioritise {
+  opacity: 0.55;
+  filter: saturate(0.6);
+}
+
+[data-risk="crisis"] .deprioritise {
+  display: none;
+}
+
+/* Respect the platform preference; never animate for people who asked us not to. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible, consistent focus for keyboard users on every interactive element. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip link: hidden until focused, then pinned to the top-left. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-radius: 6px;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(0.72);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.breathing-orb {
+  animation: breathe 10s ease-in-out infinite;
+}

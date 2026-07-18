@@ -1,0 +1,26 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Environment — never commit real keys
+.env
+.env.local
+.env*.local
+
+# Test / tooling output
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vitest/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.playwright-mcp/
+
+# Vercel
+.vercel
