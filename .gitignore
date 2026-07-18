@@ -24,3 +24,7 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Playwright verification artefacts
+*.png
+.playwright-mcp/
