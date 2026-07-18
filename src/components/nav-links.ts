@@ -57,6 +57,18 @@ export const NAV_LINKS: NavLink[] = [
     group: "Tracking",
   },
   {
+    href: "/trends",
+    label: "Trends",
+    description: "Whether it is working: outcomes, weekly pattern, minutes",
+    group: "Tracking",
+  },
+  {
+    href: "/simulator",
+    label: "Model playground",
+    description: "Move any input and watch the risk score recompute",
+    group: "Tracking",
+  },
+  {
     href: "/coach",
     label: "Coach",
     description: "Talk it through with a motivational-interviewing coach",

@@ -24,6 +24,7 @@ import { TASK_SCHEMAS, isTaskName, type TaskName } from "@/lib/ai/schemas";
 import { demoContentFor } from "@/lib/ai/demo-content";
 import { checkForCrisis, CRISIS_RESOURCES } from "@/lib/safety/crisis";
 import { looksLikePromptLeak, stripUnverifiedNumbers } from "@/lib/safety/sanitise";
+import { humanise } from "@/lib/ai/humanise";
 import { checkRateLimit, clientKey } from "@/lib/rate-limit";
 import { TRIGGER_TAGS, type RiskState, type TriggerTag } from "@/lib/domain/types";
 
@@ -215,6 +216,10 @@ export async function POST(request: Request): Promise<NextResponse> {
  * Walk generated output and clean every string it contains, at any depth. Generated
  * artifacts are nested (steps arrays, plan objects), so a shallow pass would miss most
  * of the surface that actually reaches the screen.
+ *
+ * Two passes run per string. The safety pass strips invented phone numbers and detects a
+ * leaked system prompt. The style pass removes the punctuation tells of machine writing,
+ * which the prompt asks for but cannot guarantee.
  */
 function sanitiseOutput(value: unknown): {
   data: unknown;
@@ -229,7 +234,7 @@ function sanitiseOutput(value: unknown): {
       if (looksLikePromptLeak(node)) leaked = true;
       const cleaned = stripUnverifiedNumbers(node);
       redacted.push(...cleaned.redacted);
-      return cleaned.text;
+      return humanise(cleaned.text);
     }
     if (Array.isArray(node)) return node.map(walk);
     if (node && typeof node === "object") {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ButtonLink, Card } from "@/components/ui";
 import { LoopDiagram } from "@/components/loop-diagram";
+import { HowItWorks } from "@/components/how-it-works";
 
 /**
  * Landing page.
@@ -60,8 +61,8 @@ const EVIDENCE = [
     stat: "d≈0.65",
     claim: "If-then plans",
     detail:
-      "Implementation intentions across 94 tests and more than 8,000 people — the strongest lever " +
-      "software can deliver, because the response is decided before the moment arrives.",
+      "Implementation intentions across 94 tests and more than 8,000 people. This is the strongest " +
+      "lever software can offer, because the response gets decided before the moment arrives.",
   },
   {
     stat: "g≈−0.70",
@@ -113,8 +114,8 @@ export default function LandingPage() {
           </div>
 
           <p className="mt-6 text-sm text-[var(--text-muted)]">
-            No sign-up. No API key needed. Loaded with 30 days of history so every screen works
-            immediately.
+            There is no sign-up and nothing to configure. It opens with 30 days of history already
+            in it, so every screen has something real to show you.
           </p>
         </div>
 
@@ -147,6 +148,8 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      <HowItWorks />
 
       <section aria-labelledby="why-heading" className="py-20">
         <div className="mb-12 max-w-2xl">

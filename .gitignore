@@ -28,3 +28,8 @@ Thumbs.db
 # Playwright verification artefacts
 *.png
 .playwright-mcp/
+
+.vercel
+.env*
+*.jpeg
+*.jpg

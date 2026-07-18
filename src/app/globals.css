@@ -292,6 +292,396 @@ body {
   animation: pulse-ring 4s var(--ease-fluid) infinite;
 }
 
+/* ============================================================================
+ * CSS 3D — the walkthrough scene.
+ *
+ * Real depth, built from real elements. Every layer here is a DOM node with text in it,
+ * so the whole scene stays in the accessibility tree: a WebGL canvas would render the
+ * same picture while being, per MDN, entirely invisible to assistive technology and to
+ * any agent that reads the tree rather than the pixels.
+ *
+ * The rule that governs this whole block: transform-style: preserve-3d is silently
+ * downgraded to flat by overflow other than visible, opacity below 1, a filter,
+ * clip-path, mask-image, mix-blend-mode, isolation, or contain: paint. There is no
+ * warning when it happens — the scene simply goes flat. So .demo-scene and .demo-slab
+ * carry none of those, and anything needing them is pushed to a leaf.
+ * ========================================================================== */
+
+.demo-scene {
+  perspective: 1600px;
+  perspective-origin: 60% 40%;
+  padding: 1.5rem 0;
+}
+
+.demo-slab {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateY(-13deg) rotateX(5deg) translateZ(0);
+  transition: transform 900ms var(--ease-fluid);
+  animation: slab-in 900ms var(--ease-fluid) both;
+}
+
+/* Levelling out on hover reads as a physical object being turned toward you. */
+.demo-slab:hover {
+  transform: rotateY(-5deg) rotateX(2deg) translateZ(28px);
+}
+
+@keyframes slab-in {
+  from {
+    transform: rotateY(-26deg) rotateX(9deg) translateZ(-120px);
+  }
+  to {
+    transform: rotateY(-13deg) rotateX(5deg) translateZ(0);
+  }
+}
+
+/*
+ * The card face. This one may clip and round, because it is a leaf in the 3D chain —
+ * nothing below it needs to stay in the parent's 3D space.
+ */
+.demo-face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.5rem;
+  min-height: 19rem;
+  border-radius: 1.5rem;
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  box-shadow: var(--inner-light), var(--lift-lg);
+  transform: translateZ(0);
+}
+
+/* Ambient bloom sitting behind the slab, pushed away from the viewer in real Z. */
+.demo-glow {
+  position: absolute;
+  inset: 12% 8%;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--orb-a), transparent 70%);
+  filter: blur(48px);
+  transform: translateZ(-90px) scale(1.15);
+}
+
+/* The floating tag: genuinely in front of the card, not faked with a shadow. */
+.demo-tag {
+  position: absolute;
+  top: -0.85rem;
+  left: 1.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid var(--hairline);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: var(--lift);
+  transform: translateZ(58px);
+}
+
+/*
+ * The simulator readout. Same constraints as the walkthrough scene: no overflow, opacity,
+ * or filter on the elements carrying the 3D context.
+ */
+.sim-scene {
+  perspective: 1800px;
+  perspective-origin: 50% 30%;
+}
+
+.sim-slab {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(3deg) rotateY(-4deg);
+  transition: transform 900ms var(--ease-fluid);
+}
+
+.sim-slab:hover {
+  transform: rotateX(1deg) rotateY(-1deg) translateZ(20px);
+}
+
+.sim-face {
+  border-radius: 1.5rem;
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  box-shadow: var(--inner-light), var(--lift-lg);
+  padding: 1.75rem;
+}
+
+.sim-glow {
+  position: absolute;
+  inset: 20% 10%;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--accent-soft), transparent 70%);
+  filter: blur(56px);
+  transform: translateZ(-80px) scale(1.2);
+}
+
+/* ---------- Walkthrough tabs ---------- */
+
+.demo-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  padding: 0.6rem 1.15rem 0.6rem 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: transform 500ms var(--ease-fluid), background 500ms var(--ease-fluid),
+    color 500ms var(--ease-fluid), box-shadow 500ms var(--ease-fluid);
+}
+
+.demo-tab:hover {
+  color: var(--text);
+  transform: translate3d(0, -2px, 0);
+}
+
+.demo-tab-active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: transparent;
+  box-shadow: var(--lift);
+}
+
+.demo-tab-index {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-panel:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 6px;
+  border-radius: 1.5rem;
+}
+
+.demo-copy {
+  animation: rise 700ms var(--ease-fluid) both;
+}
+
+/* ---------- Mock-screen internals ----------
+ * Sized in rem against the card, so the miniature reads as a real interface rather than
+ * a shrunken screenshot.
+ */
+
+.demo-row,
+.demo-grid-2 > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.demo-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.demo-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.demo-input {
+  border-radius: 0.75rem;
+  border: 1px solid var(--hairline);
+  background: var(--surface-sunken);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+}
+
+.demo-chip {
+  align-self: flex-start;
+  border-radius: 9999px;
+  border: 1px solid var(--hairline);
+  background: var(--accent-soft);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.demo-meter {
+  display: block;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline);
+  overflow: hidden;
+}
+
+.demo-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--accent);
+}
+
+.demo-value {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.demo-value-lg {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.demo-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.demo-score {
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-urgent-500);
+}
+
+.demo-state {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-urgent-500);
+}
+
+.demo-factors {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.demo-factors li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.demo-points {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.demo-pacer {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.demo-pacer-orb {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, var(--color-calm-300), var(--accent));
+  box-shadow: 0 0 0 6px var(--accent-soft);
+  animation: breathe 10s var(--ease-fluid) infinite;
+}
+
+.demo-pacer-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.demo-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  counter-reset: demo-step;
+  margin-top: 0.25rem;
+}
+
+.demo-steps li {
+  position: relative;
+  padding-left: 1.6rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.demo-steps li::before {
+  counter-increment: demo-step;
+  content: counter(demo-step);
+  position: absolute;
+  left: 0;
+  top: 0.05rem;
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 9999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.demo-foot {
+  margin-top: auto;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.demo-hist {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.3rem;
+  height: 4.5rem;
+}
+
+.demo-bar {
+  flex: 1;
+  border-radius: 0.25rem 0.25rem 0 0;
+  background: var(--accent);
+}
+
+/*
+ * Below the fold of a phone the slab's rotation costs more than it gives: a tilted card
+ * in a narrow column reads as broken rather than dimensional.
+ */
+@media (max-width: 767px) {
+  .demo-slab,
+  .demo-slab:hover {
+    transform: none;
+  }
+
+  .demo-face {
+    min-height: 0;
+  }
+
+  .demo-tag {
+    transform: none;
+  }
+}
+
 /* Honour the platform preference. Motion is decoration here, never information. */
 @media (prefers-reduced-motion: reduce) {
   html {
