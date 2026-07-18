@@ -8,24 +8,26 @@
  * is why they are asked rather than inferred: a browser cannot measure either honestly.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store/provider";
 import { addCheckIn } from "@/lib/store/state";
 import { Badge, Button, Card, Field, PageHeader, inputClass } from "@/components/ui";
 import { MOODS, TRIGGER_LABELS, TRIGGER_TAGS, type Mood, type TriggerTag } from "@/lib/domain/types";
-import { DEMO_ANCHOR } from "@/lib/data/seed";
 import { formatMinutes } from "@/lib/format";
 
-/** Today's date key, derived from the demo anchor so it is stable across renders. */
-const TODAY = DEMO_ANCHOR.toISOString().slice(0, 10);
 
 export default function CheckInPage() {
-  const { state, update } = useStore();
+  const { state, update, hydrated, now } = useStore();
 
-  const existing = state.checkIns.find((entry) => entry.date === TODAY);
+  /*
+   * The date follows the real clock once mounted. Deriving it from the demo anchor meant
+   * every "today's check-in" wrote to the same fixed date forever.
+   */
+  const today = now.toISOString().slice(0, 10);
+  const existing = state.checkIns.find((entry) => entry.date === today);
 
-  const [date, setDate] = useState(TODAY);
+  const [date, setDate] = useState(today);
   const [mood, setMood] = useState<Mood>(existing?.mood ?? "ok");
   const [sleepHours, setSleepHours] = useState(existing?.sleepHours ?? 7);
   const [stress, setStress] = useState(existing?.stress ?? 4);
@@ -33,6 +35,20 @@ export default function CheckInPage() {
   const [triggers, setTriggers] = useState<TriggerTag[]>(existing?.triggers ?? []);
   const [note, setNote] = useState(existing?.note ?? "");
   const [saved, setSaved] = useState(false);
+
+  // Re-seed the form from persisted data once it loads, and follow the real date.
+  useEffect(() => {
+    if (!hydrated) return;
+    setDate(today);
+    const entry = state.checkIns.find((candidate) => candidate.date === today);
+    if (!entry) return;
+    setMood(entry.mood);
+    setSleepHours(entry.sleepHours);
+    setStress(entry.stress);
+    setMinutes(entry.minutesOnHabit);
+    setTriggers(entry.triggers);
+    setNote(entry.note ?? "");
+  }, [hydrated, today, state.checkIns]);
 
   const history = useMemo(
     () => [...state.checkIns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10),

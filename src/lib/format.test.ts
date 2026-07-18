@@ -68,6 +68,20 @@ describe("formatHour", () => {
 });
 
 describe("formatMinutes", () => {
+  /*
+   * Regression: Math.min over an empty array yields Infinity, which rendered on the
+   * dashboard as "Infinityh NaNm" whenever a user had no check-ins.
+   */
+  it("renders a dash for non-finite input rather than NaN", () => {
+    expect(formatMinutes(Infinity)).toBe("—");
+    expect(formatMinutes(-Infinity)).toBe("—");
+    expect(formatMinutes(NaN)).toBe("—");
+  });
+
+  it("never renders a negative duration", () => {
+    expect(formatMinutes(-30)).toBe("0m");
+  });
+
   it("keeps sub-hour durations in minutes", () => {
     expect(formatMinutes(45)).toBe("45m");
     expect(formatMinutes(0)).toBe("0m");

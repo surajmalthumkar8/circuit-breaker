@@ -124,5 +124,8 @@ export function useGenerate<T>() {
     }
   }, []);
 
-  return { run, loading, outcome };
+  /** Clear the last result so a feature can start a fresh session. */
+  const reset = useCallback(() => setOutcome(null), []);
+
+  return { run, loading, outcome, reset };
 }

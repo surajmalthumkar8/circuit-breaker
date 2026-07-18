@@ -11,14 +11,13 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useStore } from "@/lib/store/provider";
 import { selectDashboard, selectHourlyRisk } from "@/lib/store/state";
-import { DEMO_ANCHOR } from "@/lib/data/seed";
 import { Badge, ButtonLink, Card, PageHeader, StatTile } from "@/components/ui";
 import { formatHour, formatMinutes, OUTCOME_LABELS, relativeTime } from "@/lib/format";
 import { TRIGGER_LABELS } from "@/lib/domain/types";
 
 export default function DashboardPage() {
-  const { state } = useStore();
-  const summary = useMemo(() => selectDashboard(state, DEMO_ANCHOR), [state]);
+  const { state, now } = useStore();
+  const summary = useMemo(() => selectDashboard(state, now), [state, now]);
   const hourly = useMemo(() => selectHourlyRisk(state), [state]);
 
   const riskiestHour = [...hourly].sort((a, b) => b.lapses - a.lapses || b.count - a.count)[0];
@@ -94,7 +93,7 @@ export default function DashboardPage() {
                     </Link>
                     <p className="mt-1 text-sm text-[var(--text-muted)]">
                       {TRIGGER_LABELS[urge.trigger]} · intensity {urge.intensity}/10 ·{" "}
-                      {relativeTime(urge.at)}
+                      {relativeTime(urge.at, now)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">

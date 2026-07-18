@@ -20,7 +20,7 @@ import { absoluteTime, OUTCOME_LABELS, relativeTime } from "@/lib/format";
 export default function PlanDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { state, update } = useStore();
+  const { state, update, now } = useStore();
 
   const plan = state.plans.find((candidate) => candidate.id === params.id);
 
@@ -158,7 +158,7 @@ export default function PlanDetailPage() {
                 <div>
                   <dt className="text-[var(--text-muted)]">Written</dt>
                   <dd className="mt-1 font-medium">
-                    {plan.source === "ai" ? "Generated" : "By you"}, {relativeTime(plan.createdAt)}
+                    {plan.source === "ai" ? "Generated" : "By you"}, {relativeTime(plan.createdAt, now)}
                   </dd>
                 </div>
               </dl>

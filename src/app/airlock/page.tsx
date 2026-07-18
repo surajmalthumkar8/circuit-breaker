@@ -18,7 +18,6 @@ import { useStore } from "@/lib/store/provider";
 import { logUrge, resolveUrge, selectTriggerBreakdown } from "@/lib/store/state";
 import { summariseStreak } from "@/lib/habit/streak";
 import { assessRisk } from "@/lib/risk/vulnerability";
-import { DEMO_ANCHOR } from "@/lib/data/seed";
 import { useGenerate } from "@/lib/ai/use-generate";
 import type { GeneratedRiskNarrative } from "@/lib/ai/schemas";
 import {
@@ -43,7 +42,7 @@ import { RISK_DESCRIPTIONS } from "@/lib/format";
 import { CrisisPanel } from "@/components/crisis-panel";
 
 export default function AirlockPage() {
-  const { state, update } = useStore();
+  const { state, update, now } = useStore();
 
   const [intent, setIntent] = useState("");
   const [intensity, setIntensity] = useState(6);
@@ -51,12 +50,13 @@ export default function AirlockPage() {
   const [mood, setMood] = useState<Mood>("restless");
   const [logged, setLogged] = useState<UrgeEvent | null>(null);
   const [resolved, setResolved] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const narrative = useGenerate<GeneratedRiskNarrative>();
 
   const streak = useMemo(
-    () => summariseStreak(state.urges, DEMO_ANCHOR, new Date(state.profile.createdAt)),
-    [state.urges, state.profile.createdAt],
+    () => summariseStreak(state.urges, now, new Date(state.profile.createdAt)),
+    [state.urges, state.profile.createdAt, now],
   );
 
   // Live preview: the score updates as the form changes, before anything is committed.
@@ -65,28 +65,41 @@ export default function AirlockPage() {
       assessRisk({
         intensity,
         trigger,
-        at: DEMO_ANCHOR,
+        at: now,
         history: state.urges,
         checkIns: state.checkIns,
         streakDays: streak.currentDays,
       }),
-    [intensity, trigger, state.urges, state.checkIns, streak.currentDays],
+    [intensity, trigger, state.urges, state.checkIns, streak.currentDays, now],
   );
 
   const active = logged?.risk ?? preview;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const now = new Date();
-    const result = logUrge(state, {
-      intent: intent.trim() || "scroll",
-      intensity,
-      trigger,
-      mood,
-      at: now,
+    if (submitting) return;
+    setSubmitting(true);
+
+    const at = new Date();
+    let created: UrgeEvent | null = null;
+    update((current) => {
+      const result = logUrge(current, {
+        intent: intent.trim() || "scroll",
+        intensity,
+        trigger,
+        mood,
+        at,
+      });
+      created = result.urge;
+      return result.state;
     });
-    update(() => result.state);
-    setLogged(result.urge);
+
+    const urge = created as UrgeEvent | null;
+    if (!urge) {
+      setSubmitting(false);
+      return;
+    }
+    setLogged(urge);
     setResolved(null);
 
     await narrative.run({
@@ -97,10 +110,12 @@ export default function AirlockPage() {
         why: state.profile.why,
         streakDays: streak.currentDays,
       },
-      risk: result.urge.risk,
-      intent: result.urge.intent,
+      risk: urge.risk,
+      intent: urge.intent,
       trigger,
     });
+
+    setSubmitting(false);
   }
 
   function handleOutcome(outcome: "rode_it_out" | "partial" | "lapsed") {
@@ -201,8 +216,8 @@ export default function AirlockPage() {
                 </select>
               </Field>
 
-              <Button type="submit" className="w-full">
-                Assess this moment
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? "Assessing…" : "Assess this moment"}
               </Button>
             </form>
           </Card>

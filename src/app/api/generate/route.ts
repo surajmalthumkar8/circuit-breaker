@@ -23,6 +23,7 @@ import { PROMPTS } from "@/lib/ai/prompts";
 import { TASK_SCHEMAS, isTaskName, type TaskName } from "@/lib/ai/schemas";
 import { demoContentFor } from "@/lib/ai/demo-content";
 import { checkForCrisis, CRISIS_RESOURCES } from "@/lib/safety/crisis";
+import { looksLikePromptLeak, stripUnverifiedNumbers } from "@/lib/safety/sanitise";
 import { checkRateLimit, clientKey } from "@/lib/rate-limit";
 import { TRIGGER_TAGS, type RiskState, type TriggerTag } from "@/lib/domain/types";
 
@@ -188,10 +189,56 @@ export async function POST(request: Request): Promise<NextResponse> {
     demoContent: schema.parse(demoContent) as never,
   });
 
+  // Outbound safety. Two things must never reach the screen: a phone number the model
+  // invented (a wrong crisis line is an active hazard), and the system prompt itself.
+  const safe = sanitiseOutput(result.data);
+  if (safe.leaked) {
+    return NextResponse.json({
+      blocked: false,
+      data: schema.parse(demoContent),
+      source: "demo",
+      live: false,
+      note: "The generated reply was discarded because it echoed system instructions.",
+    });
+  }
+
   return NextResponse.json({
     blocked: false,
-    data: result.data,
+    data: safe.data,
     source: result.source,
     live: result.live,
+    ...(safe.redacted.length > 0 ? { redactedNumbers: safe.redacted.length } : {}),
   });
+}
+
+/**
+ * Walk generated output and clean every string it contains, at any depth. Generated
+ * artifacts are nested (steps arrays, plan objects), so a shallow pass would miss most
+ * of the surface that actually reaches the screen.
+ */
+function sanitiseOutput(value: unknown): {
+  data: unknown;
+  redacted: string[];
+  leaked: boolean;
+} {
+  const redacted: string[] = [];
+  let leaked = false;
+
+  const walk = (node: unknown): unknown => {
+    if (typeof node === "string") {
+      if (looksLikePromptLeak(node)) leaked = true;
+      const cleaned = stripUnverifiedNumbers(node);
+      redacted.push(...cleaned.redacted);
+      return cleaned.text;
+    }
+    if (Array.isArray(node)) return node.map(walk);
+    if (node && typeof node === "object") {
+      return Object.fromEntries(
+        Object.entries(node as Record<string, unknown>).map(([key, item]) => [key, walk(item)]),
+      );
+    }
+    return node;
+  };
+
+  return { data: walk(value), redacted, leaked };
 }

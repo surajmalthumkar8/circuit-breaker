@@ -19,15 +19,19 @@ import Link from "next/link";
 import { useStore } from "@/lib/store/provider";
 import { addIntervention, logUrge, resolveUrge } from "@/lib/store/state";
 import { summariseStreak } from "@/lib/habit/streak";
-import { DEMO_ANCHOR } from "@/lib/data/seed";
 import { useGenerate } from "@/lib/ai/use-generate";
 import type { GeneratedIntervention } from "@/lib/ai/schemas";
-import { TRIGGER_LABELS, TRIGGER_TAGS, type TriggerTag } from "@/lib/domain/types";
+import {
+  TRIGGER_LABELS,
+  TRIGGER_TAGS,
+  type TriggerTag,
+  type UrgeEvent,
+} from "@/lib/domain/types";
 import { Button, ButtonLink, Card, Field, PageHeader, SourceNote, inputClass } from "@/components/ui";
 import { CrisisPanel } from "@/components/crisis-panel";
 
 export default function SosPage() {
-  const { state, update } = useStore();
+  const { state, update, now } = useStore();
   const [intent, setIntent] = useState("");
   const [trigger, setTrigger] = useState<TriggerTag>("habit_cue");
   const [step, setStep] = useState(0);
@@ -40,8 +44,8 @@ export default function SosPage() {
   const script = intervention.outcome?.data ?? null;
 
   const streak = useMemo(
-    () => summariseStreak(state.urges, DEMO_ANCHOR, new Date(state.profile.createdAt)),
-    [state.urges, state.profile.createdAt],
+    () => summariseStreak(state.urges, now, new Date(state.profile.createdAt)),
+    [state.urges, state.profile.createdAt, now],
   );
 
   // Feature-detect speech synthesis after mount; it is absent in some browsers and must
@@ -71,18 +75,27 @@ export default function SosPage() {
 
   async function startSession(event: React.FormEvent) {
     event.preventDefault();
-    const now = new Date();
+    const at = new Date();
 
     // The SOS is itself a logged urge, so it appears in the journal and the counts.
-    const result = logUrge(state, {
-      intent: intent.trim() || "act on the craving",
-      intensity: 8,
-      trigger,
-      mood: "restless",
-      at: now,
+    // The functional form matters: replacing the store with a render-time snapshot
+    // would drop any write that landed since this component last rendered.
+    let created: UrgeEvent | null = null;
+    update((current) => {
+      const result = logUrge(current, {
+        intent: intent.trim() || "act on the craving",
+        intensity: 8,
+        trigger,
+        mood: "restless",
+        at,
+      });
+      created = result.urge;
+      return result.state;
     });
-    update(() => result.state);
-    urgeIdRef.current = result.urge.id;
+
+    const urge = created as UrgeEvent | null;
+    if (!urge) return;
+    urgeIdRef.current = urge.id;
     setStep(0);
     setFinished(false);
 
@@ -94,8 +107,8 @@ export default function SosPage() {
         why: state.profile.why,
         streakDays: streak.currentDays,
       },
-      risk: result.urge.risk,
-      intent: result.urge.intent,
+      risk: urge.risk,
+      intent: urge.intent,
       trigger,
     });
 
@@ -103,9 +116,9 @@ export default function SosPage() {
       const urgeId = urgeIdRef.current;
       update((current) =>
         addIntervention(current, {
-          id: `intervention-${Date.now().toString(36)}`,
+          id: `intervention-${at.getTime().toString(36)}`,
           urgeEventId: urgeId,
-          at: now.toISOString(),
+          at: at.toISOString(),
           kind: generated.data!.kind,
           title: generated.data!.title,
           steps: generated.data!.steps,
@@ -140,6 +153,9 @@ export default function SosPage() {
     setStep(0);
     setIntent("");
     urgeIdRef.current = null;
+    // Without clearing the generated script the start form never reappears and the user
+    // is silently returned to step one of the session they just completed.
+    intervention.reset();
   }
 
   const running = Boolean(script) && !intervention.loading;

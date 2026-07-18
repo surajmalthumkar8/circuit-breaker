@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store/provider";
 import { addPlan, selectTriggerBreakdown } from "@/lib/store/state";
 import { summariseStreak } from "@/lib/habit/streak";
-import { DEMO_ANCHOR } from "@/lib/data/seed";
 import { useGenerate } from "@/lib/ai/use-generate";
 import type { GeneratedPlan } from "@/lib/ai/schemas";
 import { TRIGGER_LABELS, TRIGGER_TAGS, type TriggerTag } from "@/lib/domain/types";
@@ -29,7 +28,7 @@ interface GeneratedPlanList {
 
 export default function NewPlanPage() {
   const router = useRouter();
-  const { state, update } = useStore();
+  const { state, update, now } = useStore();
 
   const [trigger, setTrigger] = useState("");
   const [action, setAction] = useState("");
@@ -41,8 +40,8 @@ export default function NewPlanPage() {
   const suggestions = useGenerate<GeneratedPlanList>();
 
   const streak = useMemo(
-    () => summariseStreak(state.urges, DEMO_ANCHOR, new Date(state.profile.createdAt)),
-    [state.urges, state.profile.createdAt],
+    () => summariseStreak(state.urges, now, new Date(state.profile.createdAt)),
+    [state.urges, state.profile.createdAt, now],
   );
 
   const context = {
@@ -63,32 +62,42 @@ export default function NewPlanPage() {
     }
 
     setError(null);
-    const result = addPlan(state, {
-      trigger: trigger.trim(),
-      action: action.trim(),
-      rationale: rationale.trim() || "Written by you.",
-      tag,
-      source: "user",
-      at: new Date(),
+    const at = new Date();
+    let createdId = "";
+    update((current) => {
+      const result = addPlan(current, {
+        trigger: trigger.trim(),
+        action: action.trim(),
+        rationale: rationale.trim() || "Written by you.",
+        tag,
+        source: "user",
+        at,
+      });
+      createdId = result.plan.id;
+      return result.state;
     });
-    update(() => result.state);
-    setSaved(result.plan.id);
+    setSaved(createdId);
     setTrigger("");
     setAction("");
     setRationale("");
   }
 
   function acceptSuggestion(plan: GeneratedPlan) {
-    const result = addPlan(state, {
-      trigger: plan.trigger,
-      action: plan.action,
-      rationale: plan.rationale,
-      tag: plan.tag as TriggerTag,
-      source: "ai",
-      at: new Date(),
+    const at = new Date();
+    let createdId = "";
+    update((current) => {
+      const result = addPlan(current, {
+        trigger: plan.trigger,
+        action: plan.action,
+        rationale: plan.rationale,
+        tag: plan.tag as TriggerTag,
+        source: "ai",
+        at,
+      });
+      createdId = result.plan.id;
+      return result.state;
     });
-    update(() => result.state);
-    router.push(`/plans/${result.plan.id}`);
+    if (createdId) router.push(`/plans/${createdId}`);
   }
 
   return (

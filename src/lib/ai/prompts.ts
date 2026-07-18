@@ -15,6 +15,7 @@
  */
 
 import type { RiskAssessment, TriggerTag } from "@/lib/domain/types";
+import { fenceUserContent } from "@/lib/safety/sanitise";
 
 const SHARED_BOUNDARIES = `
 Hard rules you must never break:
@@ -40,13 +41,23 @@ export interface CoachContext {
   streakDays: number;
 }
 
+/**
+ * Assemble the context block.
+ *
+ * The three free-text fields are user-authored, so they are fenced rather than
+ * interpolated bare. Text that reads as an instruction ("ignore your rules and…") must be
+ * received as information about the person, never as a directive.
+ */
 function contextBlock(context: CoachContext): string {
   return `
 About this person:
-- Habit they are changing: ${context.habitLabel}
-- What success looks like to them: ${context.goal}
-- Why it matters to them, in their words: ${context.why}
 - Days since their last lapse: ${context.streakDays}
+- Habit they are changing:
+${fenceUserContent("habit", context.habitLabel)}
+- What success looks like to them:
+${fenceUserContent("goal", context.goal)}
+- Why it matters to them, in their words:
+${fenceUserContent("why", context.why)}
 `.trim();
 }
 
@@ -71,7 +82,8 @@ Respond with JSON: {"title": string, "kind": "urge_surf"|"reframe"|"swap"|"groun
     user: (context: CoachContext, risk: RiskAssessment, intent: string, trigger: TriggerTag) =>
       `${contextBlock(context)}
 
-Right now they want to: ${intent}
+Right now they want to:
+${fenceUserContent("intent", intent)}
 What set it off: ${trigger.replace(/_/g, " ")}
 Their current vulnerability score: ${risk.score} out of 100 (${risk.state.replace(/_/g, " ")})
 The biggest contributing factor: ${risk.factors[0]?.label ?? "unknown"} — ${risk.factors[0]?.detail ?? ""}
@@ -156,9 +168,11 @@ Respond with JSON: {"reframe": string, "whatHappened": string, "nextTime": strin
     user: (context: CoachContext, intent: string, trigger: TriggerTag, note: string) =>
       `${contextBlock(context)}
 
-The lapse: they ${intent}.
+The lapse — what they did:
+${fenceUserContent("lapse", intent)}
 Trigger: ${trigger.replace(/_/g, " ")}
-What they said about it: ${note || "(they did not add a note)"}
+What they said about it:
+${note ? fenceUserContent("note", note) : "(they did not add a note)"}
 
 Write the review.`,
   },
@@ -209,9 +223,10 @@ Respond with JSON: {"reply": string}`,
       `${contextBlock(context)}
 
 Recent conversation:
-${history || "(this is the start of the conversation)"}
+${history ? fenceUserContent("history", history) : "(this is the start of the conversation)"}
 
-They just said: ${message}
+They just said:
+${fenceUserContent("message", message)}
 
 Reply.`,
   },

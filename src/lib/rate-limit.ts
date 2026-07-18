@@ -1,21 +1,19 @@
 /**
- * In-memory sliding-window rate limiter for the public generation endpoint.
+ * Sliding-window rate limiter for the public generation endpoint.
  *
- * Deliberately generous. The endpoint costs real quota, so it needs a ceiling — but the
- * limit is set well above what a person (or a reviewer clicking through every screen)
- * could plausibly hit, because wrongly blocking a legitimate visitor is worse here than
- * permitting a few extra calls.
+ * The endpoint spends real model quota, so it needs a ceiling — but the limit is set well
+ * above what a person, or a reviewer clicking through every screen, could plausibly reach.
+ * Wrongly blocking a legitimate visitor is worse here than permitting a few extra calls.
  *
- * KNOWN LIMITATION, stated rather than hidden: this counts per serverless instance, so
- * across many instances the effective ceiling is higher. For a single-region deployment
- * of this size that is an acceptable trade against adding an external Redis dependency.
- * A shared store would be the correct choice at production scale.
+ * KNOWN LIMITATION, stated rather than hidden: counters live in process memory, so across
+ * several serverless instances the effective ceiling is higher. A shared store would be
+ * the correct choice at production scale.
  */
 
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 30;
 
-/** Bounded so a flood of unique keys cannot grow this map without limit. */
+/** Bounded so a flood of distinct keys cannot grow this map without limit. */
 const MAX_TRACKED_KEYS = 5_000;
 
 const hits = new Map<string, number[]>();
@@ -26,15 +24,37 @@ export interface RateLimitResult {
   retryAfterSeconds: number;
 }
 
+/**
+ * Drop keys whose windows have fully expired.
+ *
+ * Deliberately NOT a blanket clear: wiping the whole map would let an attacker reset
+ * every other client's counter simply by sending enough distinct keys to trip the cap.
+ */
+function evictExpired(now: number): void {
+  const windowStart = now - WINDOW_MS;
+  for (const [key, timestamps] of hits) {
+    if (timestamps.length === 0 || timestamps[timestamps.length - 1]! <= windowStart) {
+      hits.delete(key);
+    }
+  }
+}
+
 export function checkRateLimit(key: string, now = Date.now()): RateLimitResult {
-  if (hits.size > MAX_TRACKED_KEYS) hits.clear();
+  if (hits.size >= MAX_TRACKED_KEYS) {
+    evictExpired(now);
+    // Still full of live windows: refuse new keys rather than evicting active ones,
+    // which would hand an attacker a way to reset everyone else's counter.
+    if (hits.size >= MAX_TRACKED_KEYS && !hits.has(key)) {
+      return { allowed: false, remaining: 0, retryAfterSeconds: 60 };
+    }
+  }
 
   const windowStart = now - WINDOW_MS;
   const recent = (hits.get(key) ?? []).filter((timestamp) => timestamp > windowStart);
 
   if (recent.length >= MAX_REQUESTS) {
-    const oldest = recent[0] ?? now;
     hits.set(key, recent);
+    const oldest = recent[0] ?? now;
     return {
       allowed: false,
       remaining: 0,
@@ -47,9 +67,31 @@ export function checkRateLimit(key: string, now = Date.now()): RateLimitResult {
   return { allowed: true, remaining: MAX_REQUESTS - recent.length, retryAfterSeconds: 0 };
 }
 
-/** Best-effort client identity from proxy headers; falls back to a shared bucket. */
+/**
+ * Identify the caller.
+ *
+ * Order matters. `x-forwarded-for` is client-supplied and trivially spoofed — rotating it
+ * would defeat the limiter entirely — so platform-signed headers are preferred and it is
+ * used only as a last resort. On Vercel, `x-vercel-forwarded-for` is set by the platform
+ * and cannot be overridden by the client.
+ */
 export function clientKey(headers: Headers): string {
+  const trusted =
+    headers.get("x-vercel-forwarded-for") ??
+    headers.get("cf-connecting-ip") ??
+    headers.get("x-real-ip");
+
+  if (trusted) return trusted.trim();
+
+  // Untrusted fallback for self-hosting behind an unknown proxy. Prefixed so it is
+  // obvious in any diagnostics that this identity is not verified.
   const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || "anonymous";
-  return headers.get("x-real-ip") ?? "anonymous";
+  if (forwarded) return `untrusted:${forwarded.split(",")[0]?.trim() || "anonymous"}`;
+
+  return "anonymous";
+}
+
+/** Test seam: reset counters between cases. Never called by application code. */
+export function __resetRateLimitForTests(): void {
+  hits.clear();
 }

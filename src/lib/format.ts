@@ -5,15 +5,22 @@
  * clock, so server and client renders agree and nothing shifts during hydration.
  */
 
-import { DEMO_ANCHOR } from "@/lib/data/seed";
 import type { RiskState } from "@/lib/domain/types";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-/** "3 days ago", "just now". Reference defaults to the demo anchor for determinism. */
-export function relativeTime(iso: string, reference: Date = DEMO_ANCHOR): string {
+/**
+ * "3 days ago", "just now".
+ *
+ * The reference instant is a REQUIRED argument rather than a default, deliberately.
+ * Defaulting it to the demo anchor made every entry created after that date read
+ * "just now" forever, and the bug was invisible to tests because tests always passed an
+ * explicit reference. Callers get their reference from `useNow()`, which is the demo
+ * anchor during server render and the real clock once mounted.
+ */
+export function relativeTime(iso: string, reference: Date): string {
   const delta = reference.getTime() - new Date(iso).getTime();
 
   if (delta < 0) return "just now";
@@ -53,9 +60,13 @@ export function formatHour(hour: number): string {
 }
 
 export function formatMinutes(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
+  // Guard non-finite input: Math.min over an empty array yields Infinity, which would
+  // otherwise render as "Infinityh NaNm" on a dashboard with no check-ins.
+  if (!Number.isFinite(minutes)) return "—";
+  const safe = Math.max(0, Math.round(minutes));
+  if (safe < 60) return `${safe}m`;
+  const hours = Math.floor(safe / 60);
+  const rest = safe % 60;
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 

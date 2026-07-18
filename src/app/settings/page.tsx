@@ -8,7 +8,7 @@
  * someone else has to honour.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store/provider";
 import { updatePlan } from "@/lib/store/state";
 import { Button, Card, Field, PageHeader, inputClass } from "@/components/ui";
@@ -34,6 +34,20 @@ export default function SettingsPage() {
   const [habitLabel, setHabitLabel] = useState(state.profile.habitLabel);
   const [goal, setGoal] = useState(state.profile.goal);
   const [why, setWhy] = useState(state.profile.why);
+
+  /*
+   * State initialisers run against the SEED, because localStorage is only read after
+   * mount. Without this sync the form would display seed values over the user's real
+   * profile — and saving would silently overwrite it.
+   */
+  useEffect(() => {
+    if (!hydrated) return;
+    setDisplayName(state.profile.displayName);
+    setHabit(state.profile.habit);
+    setHabitLabel(state.profile.habitLabel);
+    setGoal(state.profile.goal);
+    setWhy(state.profile.why);
+  }, [hydrated, state.profile]);
   const [saved, setSaved] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
 

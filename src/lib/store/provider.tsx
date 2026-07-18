@@ -20,6 +20,7 @@ import {
   type ReactNode,
 } from "react";
 import { createInitialState, type AppState } from "@/lib/store/state";
+import { DEMO_ANCHOR } from "@/lib/data/seed";
 
 const STORAGE_KEY = "circuit-breaker.state.v1";
 
@@ -31,6 +32,14 @@ interface StoreValue {
   reset: () => void;
   /** True once localStorage has been read. Used to avoid flashing stale content. */
   hydrated: boolean;
+  /**
+   * The app's reference "now".
+   *
+   * The demo anchor during server render and the first client render, so both produce
+   * identical HTML; the real clock once mounted, so relative times stay truthful as the
+   * user creates new entries. Reading the clock during render would break hydration.
+   */
+  now: Date;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -64,11 +73,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Synchronous seed: identical on server and client.
   const [state, setState] = useState<AppState>(() => createInitialState());
   const [hydrated, setHydrated] = useState(false);
+  const [now, setNow] = useState<Date>(DEMO_ANCHOR);
 
   useEffect(() => {
     const persisted = loadPersisted();
     if (persisted) setState(persisted);
     setHydrated(true);
+    setNow(new Date());
+
+    // Keep relative times honest during a long session without re-rendering constantly.
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -90,8 +105,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ state, update, reset, hydrated }),
-    [state, update, reset, hydrated],
+    () => ({ state, update, reset, hydrated, now }),
+    [state, update, reset, hydrated, now],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

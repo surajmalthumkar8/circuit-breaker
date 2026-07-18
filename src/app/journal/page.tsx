@@ -17,7 +17,7 @@ import { absoluteTime, OUTCOME_LABELS, relativeTime } from "@/lib/format";
 type OutcomeFilter = UrgeOutcome | "any";
 
 export default function JournalPage() {
-  const { state } = useStore();
+  const { state, now } = useStore();
   const [query, setQuery] = useState("");
   const [outcome, setOutcome] = useState<OutcomeFilter>("any");
   const [trigger, setTrigger] = useState<TriggerTag | "any">("any");
@@ -130,7 +130,7 @@ export default function JournalPage() {
                   </h2>
                   <p className="mt-1 text-sm text-[var(--text-muted)]">
                     {TRIGGER_LABELS[urge.trigger]} · intensity {urge.intensity}/10 ·{" "}
-                    {absoluteTime(urge.at)} ({relativeTime(urge.at)})
+                    {absoluteTime(urge.at)} ({relativeTime(urge.at, now)})
                   </p>
                   {urge.note ? <p className="mt-2 text-sm italic">“{urge.note}”</p> : null}
                 </div>

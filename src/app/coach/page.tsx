@@ -17,7 +17,6 @@ import Link from "next/link";
 import { useStore } from "@/lib/store/provider";
 import { addCoachMessage } from "@/lib/store/state";
 import { summariseStreak } from "@/lib/habit/streak";
-import { DEMO_ANCHOR } from "@/lib/data/seed";
 import { useGenerate } from "@/lib/ai/use-generate";
 import type { GeneratedCoachReply } from "@/lib/ai/schemas";
 import { Button, ButtonLink, Card, PageHeader, inputClass } from "@/components/ui";
@@ -35,7 +34,7 @@ const STARTERS = [
 ];
 
 export default function CoachPage() {
-  const { state, update } = useStore();
+  const { state, update, now } = useStore();
   const [draft, setDraft] = useState("");
   const coach = useGenerate<GeneratedCoachReply>();
   const endRef = useRef<HTMLDivElement>(null);
@@ -45,8 +44,8 @@ export default function CoachPage() {
   const atLimit = userTurns >= MAX_USER_TURNS;
 
   const streak = useMemo(
-    () => summariseStreak(state.urges, DEMO_ANCHOR, new Date(state.profile.createdAt)),
-    [state.urges, state.profile.createdAt],
+    () => summariseStreak(state.urges, now, new Date(state.profile.createdAt)),
+    [state.urges, state.profile.createdAt, now],
   );
 
   useEffect(() => {
@@ -137,7 +136,7 @@ export default function CoachPage() {
                           : "text-[var(--text-muted)]"
                       }`}
                     >
-                      {relativeTime(message.at)}
+                      {relativeTime(message.at, now)}
                     </p>
                   </div>
                 </li>
