@@ -19,7 +19,7 @@ const config = [
       "jsx-a11y/no-autofocus": "off",
     },
   },
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts"] },
+  { ignores: [".next/**", "node_modules/**", "coverage/**", "next-env.d.ts"] },
 ];
 
 export default config;

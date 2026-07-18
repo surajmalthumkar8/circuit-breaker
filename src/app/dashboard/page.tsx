@@ -55,7 +55,7 @@ export default function DashboardPage() {
             href="/plans"
           />
           <StatTile
-            label="Yesterday's screen time"
+            label="Latest screen time"
             value={
               summary.latestCheckIn ? formatMinutes(summary.latestCheckIn.minutesOnHabit) : "—"
             }

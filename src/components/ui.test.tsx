@@ -19,6 +19,13 @@ async function findViolations(container: HTMLElement) {
     rules: {
       // Landmark and page-level rules do not apply to an isolated component fragment.
       region: { enabled: false },
+      /*
+       * Disabled DELIBERATELY and explicitly. axe needs canvas to compute rendered
+       * colours, which jsdom does not implement, so this rule silently no-ops here.
+       * Leaving it "enabled" would imply contrast coverage that does not exist —
+       * contrast is checked in a real browser instead.
+       */
+      "color-contrast": { enabled: false },
     },
   });
   return results.violations;

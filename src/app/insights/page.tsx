@@ -15,7 +15,6 @@ import { selectHourlyRisk, selectTriggerBreakdown } from "@/lib/store/state";
 import { useGenerate } from "@/lib/ai/use-generate";
 import type { GeneratedNudge } from "@/lib/ai/schemas";
 import { summariseStreak } from "@/lib/habit/streak";
-import { DEMO_ANCHOR } from "@/lib/data/seed";
 import { Badge, Button, ButtonLink, Card, PageHeader, SourceNote } from "@/components/ui";
 import { TRIGGER_LABELS, type CheckIn } from "@/lib/domain/types";
 import { formatHour, formatMinutes } from "@/lib/format";
@@ -25,14 +24,14 @@ interface NudgeList {
 }
 
 export default function InsightsPage() {
-  const { state } = useStore();
+  const { state, now } = useStore();
   const nudges = useGenerate<NudgeList>();
 
   const triggers = useMemo(() => selectTriggerBreakdown(state), [state]);
   const hourly = useMemo(() => selectHourlyRisk(state), [state]);
   const streak = useMemo(
-    () => summariseStreak(state.urges, DEMO_ANCHOR, new Date(state.profile.createdAt)),
-    [state.urges, state.profile.createdAt],
+    () => summariseStreak(state.urges, now, new Date(state.profile.createdAt)),
+    [state.urges, state.profile.createdAt, now],
   );
 
   const peakCount = Math.max(...hourly.map((bucket) => bucket.count), 1);
@@ -43,6 +42,27 @@ export default function InsightsPage() {
     .map((bucket) => formatHour(bucket.hour));
 
   const worstTrigger = [...triggers].sort((a, b) => b.lapseRate - a.lapseRate)[0];
+
+  /*
+   * Derived from the actual histogram rather than asserted. The previous copy claimed
+   * risk was concentrated in the late hours no matter what the data showed, which
+   * contradicts this app's own rule about never overclaiming.
+   */
+  const lateNightShare = (() => {
+    const total = hourly.reduce((sum, bucket) => sum + bucket.count, 0);
+    if (total === 0) return 0;
+    const late = hourly
+      .filter((bucket) => bucket.hour >= 21 || bucket.hour < 4)
+      .reduce((sum, bucket) => sum + bucket.count, 0);
+    return late / total;
+  })();
+
+  const peakWindowNote =
+    hourly.every((bucket) => bucket.count === 0)
+      ? "Log a few urges and this chart will show when your risk actually clusters."
+      : lateNightShare >= 0.4
+        ? `${Math.round(lateNightShare * 100)}% of your urges land between 9pm and 4am, which is when self-control is most depleted.`
+        : `Your urges are spread across the day rather than clustered at night — ${Math.round(lateNightShare * 100)}% fall between 9pm and 4am.`;
   const sleepOnLapseDays = useMemo(() => {
     const lapseDates = new Set(
       state.urges.filter((urge) => urge.outcome === "lapsed").map((urge) => urge.at.slice(0, 10)),
@@ -159,8 +179,8 @@ export default function InsightsPage() {
               <span>11pm</span>
             </div>
             <p className="mt-3 text-sm text-[var(--text-muted)]">
-              Teal is urges you handled, red is urges that became lapses. Your risk is concentrated
-              in the late hours, which is exactly when self-control is most depleted.
+              Teal is urges you handled, red is urges that became lapses.{" "}
+              {peakWindowNote}
             </p>
           </Card>
         </section>
@@ -175,13 +195,13 @@ export default function InsightsPage() {
             <div>
               <p className="text-sm text-[var(--text-muted)]">Average sleep on days you lapsed</p>
               <p className="mt-1 text-2xl font-semibold tabular-nums">
-                {sleepOnLapseDays.onLapse.toFixed(1)}h
+                {sleepOnLapseDays.onLapse > 0 ? `${sleepOnLapseDays.onLapse.toFixed(1)}h` : "—"}
               </p>
             </div>
             <div>
               <p className="text-sm text-[var(--text-muted)]">Average sleep on other days</p>
               <p className="mt-1 text-2xl font-semibold tabular-nums">
-                {sleepOnLapseDays.otherwise.toFixed(1)}h
+                {sleepOnLapseDays.otherwise > 0 ? `${sleepOnLapseDays.otherwise.toFixed(1)}h` : "—"}
               </p>
             </div>
           </div>
