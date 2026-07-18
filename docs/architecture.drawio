@@ -1,0 +1,153 @@
+<mxfile host="app.diagrams.net" modified="2026-07-18T09:00:00.000Z" agent="Circuit Breaker" version="24.0.0">
+  <diagram id="architecture" name="Architecture">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="Circuit Breaker — System Architecture" style="text;html=1;fontSize=26;fontStyle=1;align=left;verticalAlign=middle;fontColor=#1C2B2D;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="700" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Next.js 15 App Router · TypeScript strict · 4 runtime dependencies · no database, no auth" style="text;html=1;fontSize=13;align=left;verticalAlign=middle;fontColor=#4A5C5E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="56" width="900" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- ================= BROWSER ================= -->
+        <mxCell id="browser" value="BROWSER (the only place user data ever lives)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EEF3;strokeColor=#5A6E8C;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=10;fontColor=#3A4A63;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="700" height="620" as="geometry" />
+        </mxCell>
+
+        <mxCell id="routes" value="14 Route Screens (App Router)&#10;&#10;Nudges     /airlock&#10;Support    /sos  ·  /help  ·  /settings&#10;Coaching   /plans  ·  /plans/new  ·  /plans/[id]&#10;           /coach  ·  /future-self&#10;Tracking   /dashboard  ·  /journal  ·  /journal/[id]&#10;           /insights  ·  /trends  ·  /simulator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;fontSize=11;fontFamily=Courier New;fontColor=#1C2B2D;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="70" y="140" width="330" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="store" value="StoreProvider (React Context)&#10;&#10;· Seeds synchronously from a static module,&#10;  so the first paint is already populated&#10;· Reads localStorage in useEffect (SSR-safe)&#10;· Supplies `now` so no component reads&#10;  the clock during render" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;fontSize=11;fontColor=#1C2B2D;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="420" y="140" width="290" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pure" value="PURE DOMAIN LOGIC  (100% test coverage, zero I/O)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0EC;strokeColor=#3E5A48;fontSize=12;fontStyle=1;verticalAlign=top;spacingTop=8;fontColor=#3E5A48;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="70" y="345" width="640" height="255" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vuln" value="risk/vulnerability.ts&#10;&#10;THE SCORING FUNCTION&#10;6 weighted factors → 0-100&#10;Deterministic. The model&#10;NEVER computes this." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#3E5A48;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="380" width="190" height="105" as="geometry" />
+        </mxCell>
+
+        <mxCell id="simulate" value="risk/simulate.ts&#10;&#10;Counterfactual levers.&#10;Re-runs the scorer once&#10;per lever to measure&#10;real reductions." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="300" y="380" width="190" height="105" as="geometry" />
+        </mxCell>
+
+        <mxCell id="safety" value="safety/&#10;&#10;crisis.ts    keyword gate&#10;severity.ts  dependence&#10;sanitise.ts  fencing +&#10;             number strip" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F6E4DC;strokeColor=#8F3F22;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fontSize=10;fontColor=#8F3F22;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="510" y="380" width="180" height="105" as="geometry" />
+        </mxCell>
+
+        <mxCell id="selectors" value="store/state.ts  (transitions + selectors)      store/trends.ts  (heatmap · outcomes · series)      habit/streak.ts  (survives a lapse)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;align=center;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="505" width="600" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="humanise" value="ai/humanise.ts — deterministic style pass, strips machine-writing punctuation tells" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5EAD8;strokeColor=#7A5520;align=center;fontSize=10;fontColor=#7A5520;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="553" width="600" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ls" value="localStorage — the entire database. No account, no server copy, nothing transmitted." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DFD9D0;strokeColor=#8A9B96;align=center;fontSize=11;fontStyle=2;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="625" width="640" height="42" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#5A6E8C;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="routes" target="store">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#5A6E8C;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="store" target="pure">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#5A6E8C;strokeWidth=2;endArrow=block;dashed=1;" edge="1" parent="1" source="store" target="ls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ================= SERVER ================= -->
+        <mxCell id="server" value="VERCEL SERVERLESS (Node runtime)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5EAD8;strokeColor=#B0803A;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=10;fontColor=#7A5520;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="800" y="100" width="380" height="440" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api" value="/api/generate — THE ONLY SERVER ROUTE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#B0803A;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#7A5520;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="830" y="140" width="320" height="36" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s1" value="1 · Rate limit by client key&#10;    (trusts only proxy-set headers)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;align=left;spacingLeft=10;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="830" y="190" width="320" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="s2" value="2 · Zod schema validation&#10;    (free text length-capped)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;align=left;spacingLeft=10;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="830" y="240" width="320" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="s3" value="3 · CRISIS GATE — runs BEFORE any model&#10;    Match → return helplines, never coach" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F6E4DC;strokeColor=#8F3F22;strokeWidth=2;align=left;spacingLeft=10;fontSize=10;fontStyle=1;fontColor=#8F3F22;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="830" y="290" width="320" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="s4" value="4 · Generate through provider chain" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;align=left;spacingLeft=10;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="830" y="340" width="320" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="s5" value="5 · Outbound sanitise, at every depth&#10;    strip invented phone numbers&#10;    detect leaked system prompt&#10;    humanise() punctuation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;align=left;spacingLeft=10;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="830" y="380" width="320" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="s6" value="Never returns 500 for a generation failure.&#10;It degrades instead." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0EC;strokeColor=#3E5A48;align=center;fontSize=10;fontStyle=2;fontColor=#3E5A48;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="830" y="456" width="320" height="42" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" value="POST (never any personal history)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#B0803A;strokeWidth=2;endArrow=block;fontSize=10;fontColor=#7A5520;" edge="1" parent="1" source="routes" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ================= PROVIDERS ================= -->
+        <mxCell id="providers" value="GENERATION CHAIN — falls through on any failure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EEF3;strokeColor=#5A6E8C;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=10;fontColor=#3A4A63;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="100" width="310" height="440" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1" value="1 · GROQ&#10;llama-3.1-8b-instant&#10;primary engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#5A6E8C;strokeWidth=2;fontSize=11;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1275" y="150" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" value="2 · GEMINI&#10;2.5 Flash-Lite&#10;automatic fallback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#8A9B96;fontSize=11;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1275" y="245" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" value="3 · DETERMINISTIC OFFLINE ENGINE&#10;hand-written content&#10;&#10;This rung is why the app works&#10;with zero keys, and why all 188&#10;tests pass with no network." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0EC;strokeColor=#3E5A48;strokeWidth=2;fontSize=11;fontColor=#3E5A48;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1275" y="340" width="240" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#5A6E8C;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="s4" target="p1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="on failure" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8A9B96;strokeWidth=2;endArrow=block;dashed=1;fontSize=10;fontColor=#4A5C5E;" edge="1" parent="1" source="p1" target="p2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="on failure" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#8A9B96;strokeWidth=2;endArrow=block;dashed=1;fontSize=10;fontColor=#4A5C5E;" edge="1" parent="1" source="p2" target="p3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ================= KEY DECISION ================= -->
+        <mxCell id="decision" value="THE LOAD-BEARING DECISION&#10;&#10;The risk score is a pure, deterministic function. The language model explains it and acts on it, but never computes it.&#10;&#10;That single split is what makes risk testable (100% covered), un-hallucinatable, free of an API round-trip, instant enough to drive a live slider, and honest enough to show the user the actual arithmetic. It is also why the whole product still works when every API key is removed." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#16303C;strokeColor=#16303C;align=left;verticalAlign=top;spacingLeft=20;spacingTop=14;fontSize=12;fontColor=#EAF2F2;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="800" y="570" width="750" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- ================= QUALITY ================= -->
+        <mxCell id="quality" value="VERIFICATION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0EC;strokeColor=#3E5A48;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=10;fontColor=#3E5A48;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="750" width="1510" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="q1" value="188 tests&#10;15 files, no key,&#10;no network needed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#3E5A48;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="790" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="q2" value="axe-core a11y&#10;assertions on every&#10;shared primitive" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#3E5A48;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="310" y="790" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="q3" value="TypeScript strict +&#10;noUncheckedIndexedAccess&#10;jsx-a11y as errors" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#3E5A48;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="550" y="790" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="q4" value="CSP · HSTS · nosniff&#10;frame DENY · referrer&#10;permissions policy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#3E5A48;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="790" y="790" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="q5" value="102 kB shared JS&#10;zero runtime deps for 3D&#10;4 runtime deps total" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#3E5A48;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="790" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="q6" value="CI on every push&#10;typecheck · lint&#10;test · build" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#3E5A48;fontSize=10;fontColor=#1C2B2D;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1270" y="790" width="220" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
